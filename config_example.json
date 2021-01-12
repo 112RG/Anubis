@@ -1,0 +1,9 @@
+{
+  "jwt": {
+    "secret": "",
+    "cookie": {
+      "cookieName": "token"
+    },
+    "expiresIn": "7d"
+  }
+}

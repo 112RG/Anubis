@@ -2,7 +2,9 @@
 
 const path = require('path')
 const AutoLoad = require('fastify-autoload')
-
+const fs = require('fs')
+const { DataTypes } = require('sequelize')
+const config = require('./config.json')
 module.exports = async function (fastify, opts) {
   // Place here your custom code!
 
@@ -17,22 +19,32 @@ module.exports = async function (fastify, opts) {
       instance: 'db',
       sequelizeOptions: {
         database: 'db',
-        dialect: 'sqlite'
+        dialect: 'sqlite',
+        storage: 'db.sqlite'
       }
     }
   )
     .ready(async () => {
       try {
       // first connection as test
-        const result = await fastify.db.authenticate()
-
+        await fastify.db.authenticate()
+        fs
+          .readdirSync('./models')
+          .filter((file) => {
+            const returnFile = (file.indexOf('.') !== 0) &&
+            (file.slice(-3) === '.js')
+            return returnFile
+          })
+          .forEach((file) => {
+            const model = require(path.join(__dirname, '/models', file))(fastify.db, DataTypes)
+            console.log(`Loaded model ${model.name}`)
+            fastify.db[model.name] = model
+          })
+        fastify.db.User.sync()
         // log
         console.log(
           'Database connection is successfully established.'
         )
-
-        // close the server
-        fastify.close()
       } catch (err) {
       // log the error
         console.log(
@@ -57,18 +69,10 @@ module.exports = async function (fastify, opts) {
   })
   fastify.register(AutoLoad, {
     dir: path.join(__dirname, 'plugins'),
-    options: Object.assign({}, opts)
+    options: config
   })
+  fastify.register(require('fastify-cookie'))
   fastify.register(require('fastify-formbody'))
-  fastify.register(require('fastify-secure-session'), {
-    secret: 'averylogphrasebiggerthanthirtytwochars',
-    salt: 'mq9hDxBVDbspDR6n',
-    cookie: {
-      path: '/',
-      httpOnly: true // Use httpOnly for all production purposes
-      // options for setCookie, see https://github.com/fastify/fastify-cookie
-    }
-  })
   // This loads all plugins defined in routes
   // define your routes in one of these
   fastify.register(AutoLoad, {

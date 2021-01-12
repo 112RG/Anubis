@@ -2,25 +2,54 @@
 
 module.exports = async function (fastify, opts) {
   fastify.get('/login', async function (request, reply) {
-    return reply.view('login')
+    console.log(request.headers)
+    return reply.view('login', { token: await reply.generateCsrf() })
   })
-  fastify.post('/login', async function (request, reply) {
-    console.log(request.body)
-    if (request.body.password === 'w') {
-      request.session.set('data', request.body)
-      return reply.status(200).send('Successfully registered')
-    } else {
-      return reply.status(401).send('Failed to login')
+  fastify.post('/login', {
+    preValidation: fastify.csrfProtection,
+    schema: {
+      summary: 'User login',
+      body: {
+        type: 'object',
+        properties: {
+          email: { type: 'string' },
+          password: { type: 'string' }
+        },
+        required: ['email', 'password']
+      }
+    }
+  }, async function (request, reply) {
+    const user = await fastify.db.User.findOne({ where: { username: request.body.email } })
+    if (!user) {
+      return reply.status(400).send('Invalid please try again')
+    }
+    /// tefefefest
+    if (!await user.checkPassword(request.body.password)) {
+      return reply.status(400).send('Invalid please try again')
+    }
+    const token = await fastify.generateToken({ id: user.id, username: user.username })
+    reply.setCookie('token', token, {
+      path: '/',
+      secure: false, // send cookie over HTTPS only
+      httpOnly: false,
+      sameSite: true // alternative CSRF protection
+    })
+    return reply.status(200).send('Succesffully')
+  })
+
+  fastify.get('/test', async function (request, reply) {
+    // console.log(await fastify.db.User.create({ username: 'test', password: 'tefefefest' }))
+    const user = await fastify.db.User.findOne({ where: { username: 'test' } })
+    if (!user) {
+      return reply.status(400)
     }
   })
-  fastify.get('/auth', async function (request, reply) {
-    return reply.status(401).send('Successfully registered')
-    // Return 401 when not logged in. Return 200 when JWT valid.
-    // Should I use jwt? YESs
-  })
-  fastify.get('/test', async function (request, reply) {
-    return reply.status(200).send('Successfully registered')
-    // Return 401 when not logged in. Return 200 when JWT valid.
-    // Should I use jwt? YESs
+  fastify.route({
+    method: 'GET',
+    url: '/auth',
+    preValidation: [fastify.retrieveToken],
+    handler: function (request, reply) {
+      reply.status(200).send('Allowed')
+    }
   })
 }
