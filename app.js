@@ -11,6 +11,35 @@ module.exports = async function (fastify, opts) {
   // This loads all plugins defined in plugins
   // those should be support plugins that are reused
   // through your application
+  fastify.register(
+    require('sequelize-fastify'),
+    {
+      instance: 'db',
+      sequelizeOptions: {
+        database: 'db',
+        dialect: 'sqlite'
+      }
+    }
+  )
+    .ready(async () => {
+      try {
+      // first connection as test
+        const result = await fastify.db.authenticate()
+
+        // log
+        console.log(
+          'Database connection is successfully established.'
+        )
+
+        // close the server
+        fastify.close()
+      } catch (err) {
+      // log the error
+        console.log(
+          `Connection could not established: ${err}`
+        )
+      }
+    })
   fastify.register(require('point-of-view'), {
     engine: {
       pug: require('pug')
@@ -24,7 +53,7 @@ module.exports = async function (fastify, opts) {
     maxAge: '365d',
     immutable: true,
     cacheControl: true,
-    prefix: "/login/"
+    prefix: '/login/'
   })
   fastify.register(AutoLoad, {
     dir: path.join(__dirname, 'plugins'),
