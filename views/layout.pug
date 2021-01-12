@@ -1,0 +1,21 @@
+doctype html
+html
+  head
+    link(rel="preconnect" href="//cdn.jsdelivr.net")
+    link(rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/dark.min.css" crossorigin="anonymous")
+    style(type="text/css").
+      .login-container {    
+        display: flex;
+        flex-direction: column;  /* make main axis vertical */
+        justify-content: center; /* center items vertically, in this case */
+        align-items: center;     /* center items horizontally, in this case */
+        padding-top: 25%;
+      }
+      :root {
+        --background-body: #171717;
+        --background: #252525;
+        --button-hover: #303030
+      }
+  body
+    block content
+
