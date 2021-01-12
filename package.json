@@ -13,7 +13,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "fastify": "^3.0.0",
     "fastify-autoload": "^3.4.0",
